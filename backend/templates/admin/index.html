@@ -127,6 +127,7 @@
   </div>
 </div>
 
+<script id="contestData" type="application/json">{{ contest_data | tojson }}</script>
 <script>
   // 全域設定（可依需求調整）
   toastr.options = {
@@ -136,8 +137,9 @@
     "progressBar": true,            // 顯示進度條
     "preventDuplicates": true       // 不重複顯示相同訊息
   };
-  const teams = {{ contest_data.teams | tojson }};
-  const problems = {{ contest_data.problems | tojson }};
+  const serverData = JSON.parse(document.getElementById('contestData').textContent);
+  const teams = serverData.teams;
+  const problems = serverData.problems;
   const positionMap = {};
 
   const rowsSet = new Set(), colsSet = new Set(), teamByPosition = {};
