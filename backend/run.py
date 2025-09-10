@@ -400,7 +400,7 @@ def get_runs():
     
 @app.route("/pdao_be/api/runs/admin", methods=["GET"], endpoint="api-runs_admin")
 @login_required_error
-def get_runs():
+def get_runs_admin():
     """
     取得完整賽況資料（管理員）
     ---
