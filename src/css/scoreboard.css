@@ -319,8 +319,8 @@ sup {
 #team-list, #dashboard {
     position: relative;
     font-size: 0.95em;
-    margin: 2.75em 0 1em 0;
-    overflow: scroll !important;
+    margin: 0 0 1em 0;
+    overflow: visible;
 }
 
 .award-mode #team-list {
@@ -1098,6 +1098,216 @@ div.results:after {
     height: 110px;
     width: auto;
     z-index: 1010;
+}
+
+/* ========== Scoreboard Table Layout ========== */
+#scoreboard-header {
+    display: flex !important;
+    font-size: 1.1em;
+    font-weight: 600;
+    padding: 0.8em 0;
+    margin: 1em 0 0 0;
+    border-bottom: 2px solid #333;
+    border-top: 1px solid #ccc;
+    background: #e0e0e0;
+    align-items: center;
+    color: #333;
+}
+
+#scoreboard-header > span {
+    text-align: center;
+    color: #333;
+}
+
+.header-rank {
+    width: 40px;
+    flex-shrink: 0;
+    padding-left: 10px;
+    text-align: left;
+}
+
+.header-name {
+    flex: 1;
+    text-align: left !important;
+    padding-left: 5px;
+    min-width: 120px;
+}
+
+.header-problems {
+    width: 210px;
+    flex-shrink: 0;
+    text-align: left;
+    padding-left: 5px;
+}
+
+.header-cp {
+    width: 70px;
+    flex-shrink: 0;
+}
+
+.header-time {
+    width: 60px;
+    flex-shrink: 0;
+}
+
+.header-opt-problems {
+    width: 60px;
+    flex-shrink: 0;
+}
+
+.header-opt {
+    width: 70px;
+    flex-shrink: 0;
+}
+
+#team-list .team {
+    display: flex;
+    align-items: center;
+    font-size: 1.4em;
+    height: auto;
+    padding: 0.3em 0;
+    border-bottom: 1px solid #ddd;
+}
+
+#team-list .team:hover {
+    background-color: #E2F08B !important;
+}
+
+/* Rank-based coloring */
+#team-list .team.rank-top {
+    background-color: #d4edda;
+}
+#team-list .team.rank-high {
+    background-color: #e8f5e9;
+}
+#team-list .team.rank-mid {
+    background-color: #fffde7;
+}
+#team-list .team.rank-low {
+    background-color: #ffebee;
+}
+
+#team-list .team .team-rank {
+    width: 40px;
+    flex-shrink: 0;
+    text-align: left;
+    padding-left: 10px;
+    float: none;
+    position: static;
+    top: auto;
+    font-weight: 600;
+}
+
+#team-list .team .team-name-col {
+    flex: 1;
+    text-align: left;
+    padding-left: 5px;
+    font-weight: 400;
+    overflow: hidden;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#team-list .team .team-name-col .team-name {
+    font-size: 0.85em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#team-list .team .team-name-col .team-dept {
+    font-size: 0.65em;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.problem-indicators {
+    width: 210px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+}
+
+.prob-ind {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background-color: #bbb;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55em;
+    color: white;
+    font-weight: 700;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+}
+
+.prob-ind.solved {
+    background-color: #388e3c;
+}
+
+.prob-ind.failed {
+    background-color: #d32f2f;
+}
+
+.prob-ind.pending {
+    background-color: #f57c00;
+}
+
+#team-list .team .score-cp {
+    width: 70px;
+    flex-shrink: 0;
+    text-align: center;
+    font-weight: 600;
+}
+
+#team-list .team .score-time {
+    width: 60px;
+    flex-shrink: 0;
+    text-align: center;
+    font-weight: 600;
+}
+
+.opt-indicators {
+    width: 60px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+}
+
+.opt-ind {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background-color: #bbb;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55em;
+    color: white;
+    font-weight: 700;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+}
+
+.opt-ind.has-score {
+    background-color: #1976d2;
+}
+
+#team-list .team .score-opt {
+    width: 70px;
+    flex-shrink: 0;
+    text-align: center;
+    font-weight: 600;
+}
+
+#team-list .team .clear {
+    display: none;
 }
 
 /* vim: set ts=4 sts=4 sw=4: */

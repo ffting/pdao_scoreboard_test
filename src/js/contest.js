@@ -284,6 +284,19 @@
       })();
     };
 
+    TeamStatus.prototype.getSectionTotalSolved = function(section) {
+       var cacheKey = 'totalSolved_' + section;
+       if (this.cache[cacheKey] != null) return this.cache[cacheKey];
+       var s = 0;
+       var _ref1 = this.problemStatuses;
+       for (var pid in _ref1) {
+          if (this.contest.getProblemSection(pid) === section) {
+             if (_ref1[pid].isAccepted()) s++;
+          }
+       }
+       return this.cache[cacheKey] = s;
+    };
+
     TeamStatus.prototype.getPenalty = function() {
       var _ref,
         _this = this;
@@ -298,6 +311,53 @@
         return s;
       })();
     };
+
+    TeamStatus.prototype.getSectionPoints = function(section) {
+       var cacheKey = 'points_' + section;
+       if (this.cache[cacheKey] != null) return this.cache[cacheKey];
+       var s = 0;
+       var _ref1 = this.problemStatuses;
+       for (var pid in _ref1) {
+          if (this.contest.getProblemSection(pid) === section) {
+             // For Optimization: use highest score across all submissions
+             // For CP: use regular getPoints (100 for solved, 0 otherwise)
+             if (section === 'Opt') {
+                s += _ref1[pid].getHighestScore();
+             } else {
+                s += _ref1[pid].getPoints();
+             }
+          }
+       }
+       return this.cache[cacheKey] = s;
+    };
+
+    TeamStatus.prototype.getSectionPenalty = function(section) {
+       var cacheKey = 'penalty_' + section;
+       if (this.cache[cacheKey] != null) return this.cache[cacheKey];
+       var s = 0;
+       var _ref1 = this.problemStatuses;
+       for (var pid in _ref1) {
+          if (this.contest.getProblemSection(pid) === section) {
+             s += _ref1[pid].getContributingPenalty();
+          }
+       }
+       return this.cache[cacheKey] = s;
+    };
+
+    TeamStatus.prototype.getSectionLastSolvedTime = function(section) {
+       var cacheKey = 'lastSolvedTime_' + section;
+       if (this.cache[cacheKey] != null) return this.cache[cacheKey];
+       var s = 0;
+       var _ref1 = this.problemStatuses;
+       for (var pid in _ref1) {
+          if (this.contest.getProblemSection(pid) === section) {
+             var t = _ref1[pid].getSolvedTime();
+             if (t != null && t > s) s = t;
+          }
+       }
+       return this.cache[cacheKey] = s;
+    };
+
 
     TeamStatus.prototype.getLastSolvedTime = function() {
       var _ref,
@@ -463,7 +523,9 @@
         _this = this;
       return (_ref = this.cache.penalty) != null ? _ref : this.cache.penalty = (function() {
         if (_this.isAccepted()) {
-          return (_this.getFailedAttempts()) * 20 + _this.getSolvedTime();
+          // Penalty: Time + 10 * (Failed Attempts after 4th try)
+          var penaltyAttempts = Math.max(0, _this.getFailedAttempts() - 4);
+          return penaltyAttempts * 10 + _this.getSolvedTime();
         } else {
           return 0;
         }
@@ -475,15 +537,55 @@
         _this = this;
       return (_ref = this.cache.penaltyMemo) != null ? _ref : this.cache.penaltyMemo = (function() {
         if (_this.isAccepted()) {
-          if (_this.getFailedAttempts() === 0) {
+          var penaltyAttempts = Math.max(0, _this.getFailedAttempts() - 4);
+          if (penaltyAttempts === 0) {
             return "" + (_this.getSolvedTime());
           } else {
-            return "" + (_this.getSolvedTime()) + " + 20 * " + (_this.getFailedAttempts()) + " = " + (_this.getContributingPenalty());
+            return "" + (_this.getSolvedTime()) + " + 10 * " + penaltyAttempts + " = " + (_this.getContributingPenalty());
           }
         } else {
           return '';
         }
       })();
+    };
+    
+    TeamProblemStatus.prototype.getPoints = function() {
+        var _ref, _this = this;
+        return (_ref = this.cache.points) != null ? _ref : this.cache.points = (function() {
+            var run = _this.getNetLastRun();
+            if (run != null) {
+                if (run.isJudgedYes()) return 100;
+                // Attempt to parse partial score if needed, e.g. from result string
+                // var score = parseInt(run.getResult());
+                // if (!isNaN(score)) return score;
+            }
+            return 0;
+        })();
+    };
+
+    // For Optimization problems: get highest score across ALL runs (not just net runs)
+    // Max 50 points per optimization problem
+    TeamProblemStatus.prototype.getHighestScore = function() {
+        var _ref, _this = this;
+        return (_ref = this.cache.highestScore) != null ? _ref : this.cache.highestScore = (function() {
+            var maxScore = 0;
+            var allRuns = _this.runs; // All runs, not just net runs
+            for (var i = 0; i < allRuns.length; i++) {
+                var run = allRuns[i];
+                var result = run.getResult();
+                // Check if it's a numeric score
+                var score = parseInt(result, 10);
+                if (!isNaN(score) && score > maxScore) {
+                    maxScore = score;
+                }
+                // Also check if judged Yes (50 points for optimization)
+                if (run.isJudgedYes() && 50 > maxScore) {
+                    maxScore = 50;
+                }
+            }
+            // Cap at 50 points per optimization problem
+            return Math.min(maxScore, 50);
+        })();
     };
 
     TeamProblemStatus.prototype.getSolvedTime = function() {
@@ -806,6 +908,27 @@
     Contest.prototype.getSystemVersion = function() {
       return this.systemVersion;
     };
+    
+    Contest.prototype.getProblemSection = function(pid) {
+       if (!this._problemSectionMap) {
+         this._problemSectionMap = {};
+         for (var i = 0; i < this.problems.length; i++) {
+            // First 8 problems (0-7) are CP
+            // Next 2 problems (8-9) are Optimization
+            // Any others are ignored (Other)
+            var section;
+            if (i < 8) {
+               section = 'CP';
+            } else if (i < 10) {
+               section = 'Opt';
+            } else {
+               section = 'Other';
+            }
+            this._problemSectionMap[this.problems[i].getId()] = section;
+         }
+       }
+       return this._problemSectionMap[pid] || 'Other';
+    };
 
     Contest.prototype.getProblems = function() {
       return this.problems;
@@ -865,6 +988,16 @@
       return this.rankedTeamStatuses;
     };
 
+    Contest.prototype.getRankedTeamStatusListCP = function() {
+      this.updateTeamStatusesAndRanks();
+      return this.rankedTeamStatusesCP;
+    };
+
+    Contest.prototype.getRankedTeamStatusListOpt = function() {
+      this.updateTeamStatusesAndRanks();
+      return this.rankedTeamStatusesOpt;
+    };
+
     Contest.prototype.getProblemSummary = function(problem) {
       problem = this.getProblem(problem);
       if (!(problem instanceof Problem)) {
@@ -878,7 +1011,7 @@
     };
 
     Contest.prototype.updateTeamStatusesAndRanks = function() {
-      var prevTeamStatus, r, rts, teamComparator, teamStatus, tid, ts;
+      var rts, teamComparator, teamStatus, tid, ts;
       rts = (function() {
         var _ref, _results;
         _ref = shallowClone(this.teamStatuses);
@@ -889,33 +1022,70 @@
         }
         return _results;
       }).call(this);
-      teamComparator = function(t1, t2) {
-        if (t1.getTotalSolved() !== t2.getTotalSolved()) {
-          return t2.getTotalSolved() - t1.getTotalSolved();
-        }
-        if (t1.getPenalty() !== t2.getPenalty()) {
-          return t1.getPenalty() - t2.getPenalty();
-        }
-        if (t1.getLastSolvedTime() !== t2.getLastSolvedTime()) {
-          return t1.getLastSolvedTime() - t2.getLastSolvedTime();
-        }
-        return 0;
+
+      // Overall ranking: sum of CP + Opt scores
+      var overallComparator = function(t1, t2) {
+          var total1 = t1.getSectionPoints('CP') + t1.getSectionPoints('Opt');
+          var total2 = t2.getSectionPoints('CP') + t2.getSectionPoints('Opt');
+          if (total1 !== total2) return total2 - total1; // Descending Total Points
+
+          // Tie-breaker: Total Penalty
+          var pen1 = t1.getSectionPenalty('CP') + t1.getSectionPenalty('Opt');
+          var pen2 = t2.getSectionPenalty('CP') + t2.getSectionPenalty('Opt');
+          return pen1 - pen2; // Ascending Penalty
       };
-      stableSort(rts, teamComparator);
-      for (r in rts) {
-        teamStatus = rts[r];
-        teamStatus.rank = parseInt(r) + 1;
-      }
-      for (r in rts) {
-        teamStatus = rts[r];
-        if ((r = parseInt(r)) > 0) {
-          prevTeamStatus = rts[r - 1];
-          if (teamComparator(prevTeamStatus, teamStatus) === 0) {
-            teamStatus.rank = prevTeamStatus.rank;
+
+      stableSort(rts, overallComparator);
+      for (var r = 0; r < rts.length; r++) {
+          rts[r].rank = r + 1;
+          if (r > 0 && overallComparator(rts[r-1], rts[r]) === 0) {
+             rts[r].rank = rts[r-1].rank;
           }
-        }
       }
       this.rankedTeamStatuses = rts;
+
+      // Helper to sort ranking based on section (for section-specific lists if needed later)
+      var createComparator = function(section) {
+          return function(t1, t2) {
+             var p1 = t1.getSectionPoints(section);
+             var p2 = t2.getSectionPoints(section);
+             if (p1 !== p2) return p2 - p1; // Descending Points
+
+             var pen1 = t1.getSectionPenalty(section);
+             var pen2 = t2.getSectionPenalty(section);
+             if (pen1 !== pen2) return pen1 - pen2; // Ascending Penalty
+             
+             // Time tie-breaker
+             var time1 = t1.getSectionLastSolvedTime(section);
+             var time2 = t2.getSectionLastSolvedTime(section);
+             return time1 - time2;
+          };
+      };
+
+      // 1. Sort CP
+      var rtsCP = rts.slice(0);
+      var compCP = createComparator('CP');
+      stableSort(rtsCP, compCP);
+      for (var r = 0; r < rtsCP.length; r++) {
+          rtsCP[r].rankCP = r + 1;
+          if (r > 0 && compCP(rtsCP[r-1], rtsCP[r]) === 0) {
+             rtsCP[r].rankCP = rtsCP[r-1].rankCP;
+          }
+      }
+      this.rankedTeamStatusesCP = rtsCP;
+
+      // 2. Sort Opt
+      var rtsOpt = rts.slice(0);
+      var compOpt = createComparator('Opt');
+      stableSort(rtsOpt, compOpt);
+      for (var r = 0; r < rtsOpt.length; r++) {
+          rtsOpt[r].rankOpt = r + 1;
+          if (r > 0 && compOpt(rtsOpt[r-1], rtsOpt[r]) === 0) {
+             rtsOpt[r].rankOpt = rtsOpt[r-1].rankOpt;
+          }
+      }
+      this.rankedTeamStatusesOpt = rtsOpt;
+      
       return rts;
     };
 
