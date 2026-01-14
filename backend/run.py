@@ -31,7 +31,7 @@ except ImportError:
     swagger = None
 
 # for using local runs file
-local_flag = 1
+local_flag = 0
 LOCAL_RUNS_PATH = "backend_file/PDAO2025_result.json"
 
 STATUS_PATH = "backend_file/status.json"
