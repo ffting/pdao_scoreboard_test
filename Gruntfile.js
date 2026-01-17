@@ -134,7 +134,7 @@ module.exports = function (grunt) {
 
     // load plugins
     grunt.loadNpmTasks('grunt-contrib-watch');
-    grunt.loadNpmTasks('grunt-contrib-coffee');
+    // grunt.loadNpmTasks('grunt-contrib-coffee');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-contrib-connect');
@@ -144,7 +144,7 @@ module.exports = function (grunt) {
 
 
     // register tasks
-    grunt.registerTask('default', [ 'file-creator', 'coffee', 'requirejs', 'copy', 'usebanner' ]);
+    grunt.registerTask('default', [ 'file-creator', 'requirejs', 'copy', 'usebanner' ]);
     grunt.registerTask('server', [ 'default', 'connect:prod' ]);
-    grunt.registerTask('dev', [ 'file-creator', 'coffee', 'configureProxies:dev', 'connect:dev', 'watch' ]);
+    grunt.registerTask('dev', [ 'file-creator', 'configureProxies:dev', 'connect:dev', 'watch' ]);
 };
